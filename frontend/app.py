@@ -5,7 +5,9 @@ Two screens:
   2) Workspace - results / activity / audit + agent chat (shown after run).
 
 Run inside the project venv:
-    ./venv/bin/python frontend/app.py
+    ./venv/bin/python run.py          # starts the backend + this UI together
+
+Or start the two processes manually (two terminals):
     ./venv/bin/python backend/agent_server.py
     ./venv/bin/python frontend/app.py
 """
