@@ -19,3 +19,9 @@ backend/.env
 .DS_Store
 .idea/
 .vscode/
+
+# TrialGPT benchmark data not used at runtime (the app only needs
+# dataset/sigir/retrieved_trials.json). Excluded to keep the repo lean.
+backend/tool_registry/TrialGPT/dataset/trec_2021/
+backend/tool_registry/TrialGPT/dataset/trec_2022/
+backend/tool_registry/TrialGPT/dataset/sigir/corpus.jsonl
