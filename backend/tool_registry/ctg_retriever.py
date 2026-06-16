@@ -165,6 +165,20 @@ _SYSTEM = (
     "search returns too few or irrelevant trials. Output JSON only, no prose."
 )
 
+# After the search loop finishes, the model writes a short natural-language
+# wrap-up of the retrieved trials (this is the "정리/요약" the UI shows below the
+# reasoning trace and the raw trial list).
+_SUMMARY_SYSTEM = (
+    "You are a clinical-trial assistant. Given the user's request and the trials "
+    "retrieved from ClinicalTrials.gov, write a concise summary in Markdown that "
+    "(1) states how many relevant trials were found, (2) highlights the most "
+    "relevant ones by NCT ID with a one-line reason (condition / intervention / "
+    "recruiting status fit), and (3) adds a brief closing note or caveat. Use "
+    "`-` bullets and `**bold**`; keep it under ~150 words. Reply in the SAME "
+    "language as the user request (Korean if the request is in Korean). Do not "
+    "invent trials beyond those provided."
+)
+
 
 class CTGRetriever:
     def __init__(self, mock: bool, model: str, max_steps: int = 4, page_size: int = 5):
@@ -212,10 +226,12 @@ class CTGRetriever:
 
     # -- ReAct loop ---------------------------------------------------------
     def _run_react(self, query: str, extra_context: str) -> str:
-        """Drive the search with a ReAct loop, but return ONLY the final results.
+        """Drive the search with a ReAct loop and surface the reasoning trace.
 
-        The Thought/Action/Observation trace is logged to the terminal; the UI
-        output is just the retrieved trials.
+        Each step's Thought / Action / Observation is collected into a Markdown
+        trace (and still logged to the terminal) so the UI shows *how* the agent
+        searched — the model's own reasoning — alongside the final trials,
+        instead of only the structured results.
         """
         seen: dict[str, dict] = {}
 
@@ -227,24 +243,36 @@ class CTGRetriever:
             {"role": "user", "content": user_intro + "\n\nBegin. Output the first action as JSON."},
         ]
 
+        trace: list[str] = ["## Search reasoning", ""]
         final_ids: list[str] = []
         for step in range(1, self.max_steps + 1):
             raw = self._chat(messages)
             action = self._parse_action(raw)
             if not action:
                 log.info("  CTG ReAct step %d: unparseable action; stopping", step)
+                trace.append(f"**Step {step}** — model output could not be parsed; stopping.")
+                trace.append("")
                 break
 
             thought = str(action.get("thought", "")).strip()
             act = str(action.get("action", "")).strip()
 
+            trace.append(f"**Step {step}**")
+            if thought:
+                trace.append(f"- **Thought:** {thought}")
+
             if act == "finish":
                 final_ids = [str(x).strip() for x in action.get("nctids", []) if str(x).strip()]
                 log.info("  CTG ReAct step %d: finish | thought=%s", step, thought)
+                picked = ", ".join(f"`{n}`" for n in final_ids) if final_ids else "all trials seen so far"
+                trace.append(f"- **Action:** `finish` → selected {picked}")
+                trace.append("")
                 break
 
             if act != "search_trials":
                 log.info("  CTG ReAct step %d: unknown action %r; stopping", step, act)
+                trace.append(f"- **Action:** unknown action `{act}`; stopping.")
+                trace.append("")
                 break
 
             args = action.get("args", {}) if isinstance(action.get("args"), dict) else {}
@@ -262,6 +290,16 @@ class CTGRetriever:
 
             obs = _observation(trials)
             log.info("  CTG ReAct step %d: term=%r -> %s", step, term, obs)
+
+            query_parts = [f'term="{term}"']
+            for name in ("condition", "intervention", "status"):
+                val = str(args.get(name, "")).strip()
+                if val:
+                    query_parts.append(f'{name}="{val}"')
+            trace.append(f"- **Action:** `search_trials({', '.join(query_parts)})`")
+            trace.append(f"- **Observation:** {obs}")
+            trace.append("")
+
             messages.append({"role": "assistant", "content": raw})
             messages.append({"role": "user", "content": f"Observation: {obs}\n\nNext action as JSON."})
 
@@ -272,7 +310,39 @@ class CTGRetriever:
             final = list(seen.values())
 
         self.candidates = [to_trialgpt_trial(t) for t in final]
-        return "## Retrieved trials (ClinicalTrials.gov)\n\n" + _format_trials(final)
+        trace_block = "\n".join(trace).rstrip()
+        results_block = "## Retrieved trials (ClinicalTrials.gov)\n\n" + _format_trials(final)
+        summary_block = self._summarize(query, final)
+        blocks = [trace_block, results_block]
+        if summary_block:
+            blocks.append(summary_block)
+        return "\n\n".join(blocks)
+
+    # -- summary ------------------------------------------------------------
+    def _summarize(self, query: str, trials: list[dict]) -> str:
+        """Ask the model to wrap up the retrieved trials in plain language.
+
+        Returns a Markdown "## Summary" section, or an empty string if there is
+        nothing to summarize or the call fails (so the trials still render).
+        """
+        if not trials:
+            return ""
+        try:
+            user = (
+                f"User request:\n{query}\n\n"
+                f"Retrieved trials ({len(trials)}):\n{_format_trials(trials)}\n\n"
+                "Write the summary now."
+            )
+            summary = self._chat([
+                {"role": "system", "content": _SUMMARY_SYSTEM},
+                {"role": "user", "content": user},
+            ]).strip()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("CTG summary generation failed: %s", exc)
+            return ""
+        if not summary:
+            return ""
+        return "## Summary\n\n" + summary
 
     # -- mock / fallback ----------------------------------------------------
     def _run_keyword(self, query: str) -> str:

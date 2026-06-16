@@ -59,7 +59,7 @@ class ProtocolGenerator:
         Falls back to the built-in base template when the file is missing or empty.
         """
         try:
-            with open(template_path, 'r') as f:
+            with open(template_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         except FileNotFoundError:
             log.warning("Template not found at %s. Using default base template.", template_path)
