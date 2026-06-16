@@ -431,7 +431,7 @@ class LauncherPage(QWidget):
         fl.addStretch(1)
         fl.addWidget(make_logo(16))
         contact = QLabel(
-            '<a href="https://www.dataize.io/contact_us"'
+            '<a href="https://dataize.io/contact-us"'
             ' style="color:#cdd9e6; text-decoration:underline;">Contact us</a>'
         )
         contact.setTextFormat(Qt.TextFormat.RichText)
@@ -441,6 +441,22 @@ class LauncherPage(QWidget):
             "color:#cdd9e6; font-size:13px; font-weight:700; background: transparent;"
         )
         fl.addWidget(contact)
+
+        sep = QLabel("\u00b7")
+        sep.setStyleSheet("color:#6b7685; font-size:13px; background: transparent;")
+        fl.addWidget(sep)
+
+        api_key_link = QLabel(
+            '<a href="https://dataize.io/konect-api-key"'
+            ' style="color:#cdd9e6; text-decoration:underline;">Get API key</a>'
+        )
+        api_key_link.setTextFormat(Qt.TextFormat.RichText)
+        api_key_link.setOpenExternalLinks(True)
+        api_key_link.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        api_key_link.setStyleSheet(
+            "color:#cdd9e6; font-size:13px; font-weight:700; background: transparent;"
+        )
+        fl.addWidget(api_key_link)
         fl.addStretch(1)
         fcol.addLayout(fl)
         outer.addWidget(footer)
