@@ -1,0 +1,36 @@
+{
+    "prompts": [
+      {
+        "topic": "임상시험을 Agent로 검색하기",
+        "items": [
+          "Find currently recruiting clinical trials on ClinicalTrials.gov for HER2-positive metastatic breast cancer patients treated with HER2-targeted antibody-drug conjugates. Phase II or Phase III interventional trials 위주로 NCT ID, title, phase, status, sponsor, intervention, primary endpoint를 정리해줘.",
+          "Find recruiting clinical trials on ClinicalTrials.gov for EGFR-mutant non-small cell lung cancer after osimertinib progression. Include trials involving EGFR inhibitors, MET inhibitors, antibody-drug conjugates, or combination targeted therapy. 결과를 phase, intervention, eligibility summary 기준으로 정리해줘.",
+          "Find currently recruiting clinical trials for relapsed or refractory diffuse large B-cell lymphoma(DLBCL) using bispecific antibodies such as glofitamab, epcoritamab, or mosunetuzumab. ClinicalTrials.gov 기반으로 trial status, locations, sponsor, primary outcome, key eligibility criteria를 정리해줘."
+        ]
+      },
+      {
+        "topic": "임상시험 프로토콜 초안 작성하기",
+        "items": [
+          "HER2 양성 전이성 유방암(HER2-positive metastatic breast cancer) 환자를 대상으로 하는 randomized Phase II 임상시험 protocol synopsis를 작성해줘. 대상자는 prior trastuzumab-containing regimen 이후 disease progression이 확인된 성인 환자로 설정하고, investigational HER2-targeted antibody-drug conjugate와 physician's choice therapy를 비교해줘. Primary endpoint는 ORR by RECIST v1.1, secondary endpoints는 PFS, OS, DoR, DCR, safety, QoL로 설정해줘.",
+          "EGFR exon 19 deletion 또는 L858R mutation이 있는 advanced non-small cell lung cancer(NSCLC) 환자를 대상으로, osimertinib 이후 progression한 환자에게 사용할 investigational targeted therapy의 Phase II, multicenter, single-arm clinical trial protocol synopsis를 작성해줘. Primary endpoint는 ORR, secondary endpoints는 PFS, OS, DoR, safety로 설정하고, CNS metastases 관련 eligibility criteria도 포함해줘.",
+          "Relapsed or refractory diffuse large B-cell lymphoma(DLBCL) 환자를 대상으로 bispecific antibody의 유효성과 안전성을 평가하는 Phase II clinical trial protocol 초안을 작성해줘. Inclusion criteria에는 ECOG 0–2, prior anti-CD20 therapy, measurable disease를 포함하고, safety monitoring에는 CRS, ICANS, infection risk, cytopenia monitoring을 포함해줘."
+        ]
+      },
+      {
+        "topic": "임상시험 프로토콜 초안 검토하기",
+        "items": [
+          "[Regulatory 관점] HER2-positive metastatic breast cancer 환자 대상 investigational HER2-targeted ADC Phase II protocol을 ICH-GCP, FDA, EMA 관점에서 regulatory review 해줘. 특히 ORR primary endpoint의 적절성, RECIST v1.1 assessment, independent central review 필요성, cardiotoxicity, ILD/pneumonitis monitoring, AE/SAE reporting timeline, informed consent process를 검토해줘.",
+          "[PI 관점] HER2-positive metastatic breast cancer Phase II protocol을 PI 관점에서 scientific review 해줘. Study rationale, ORR primary endpoint의 임상적 의미, PFS/OS secondary endpoint의 적절성, physician's choice comparator의 타당성, prior HER2-directed therapy heterogeneity, CNS metastases eligibility 기준을 검토해줘.",
+          "[Site 관점] HER2-positive metastatic breast cancer Phase II protocol을 실제 병원 site에서 수행한다고 가정하고 site feasibility review를 해줘. Visit schedule, CT/MRI imaging frequency, LVEF monitoring, CBC/chemistry lab schedule, QoL questionnaire burden, CRC workload, investigational product storage and accountability, patient travel burden을 검토해줘."
+        ]
+      },
+      {
+        "topic": "환자 정보를 입력하여 맞춤형 임상시험 정보 찾기",
+        "items": [
+          "A 60-year-old female with HER2-positive metastatic breast cancer, IHC 3+, prior trastuzumab and pertuzumab exposure, prior T-DM1, no prior trastuzumab deruxtecan, ECOG 1, LVEF 56%, measurable lung metastasis, stable treated CNS metastasis, no ILD history. 후보 임상시험의 inclusion/exclusion criteria와 비교해서 eligibility matching report를 작성해줘.",
+          "A 67-year-old patient with metastatic castration-resistant prostate cancer(mCRPC), BRCA2 mutation, prior abiraterone and docetaxel treatment, ECOG performance status 1, adequate renal and hepatic function. 이 환자가 PARP inhibitor 또는 targeted therapy trial에 적합한지 inclusion/exclusion criteria 기준으로 매칭해줘.",
+          "A 54-year-old male with relapsed/refractory diffuse large B-cell lymphoma(DLBCL), prior R-CHOP and CAR-T therapy, ECOG 2, grade 2 cytopenia, history of severe infection within 4 weeks. 이 환자의 trial eligibility를 matched inclusion criteria, exclusion risk, missing information으로 나누어 설명해줘."
+        ]
+      }
+    ]
+  }

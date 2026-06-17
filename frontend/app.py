@@ -366,6 +366,31 @@ LAUNCHER_TOOLS = [
 ]
 
 
+SAMPLE_PROMPT_PATH = os.path.join(_FRONTEND_DIR, "sample_prompt.json")
+
+
+def load_sample_prompts() -> list[dict]:
+    """Load example prompts grouped by topic from sample_prompt.json.
+
+    Returns a list of ``{"topic": str, "items": list[str]}`` entries. On any
+    error (missing/invalid file) returns an empty list so the launcher falls
+    back to its built-in example chips.
+    """
+    try:
+        with open(SAMPLE_PROMPT_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("sample_prompt.json load failed: %s", exc)
+        return []
+    out = []
+    for entry in data.get("prompts", []):
+        topic = (entry.get("topic") or "").strip()
+        items = [str(i).strip() for i in entry.get("items", []) if str(i).strip()]
+        if topic and items:
+            out.append({"topic": topic, "items": items})
+    return out
+
+
 PAGE_BG = (
     f"qlineargradient(x1:0,y1:0,x2:0.3,y2:1, stop:0 {BG_TOP}, stop:1 {BG_BOTTOM})"
 )
@@ -578,18 +603,28 @@ class LauncherPage(QWidget):
         layout.addSpacing(18)
 
     def _build_chips(self, layout):
+        # Example prompts come from sample_prompt.json: each topic is a chip,
+        # and clicking it opens a picker to choose one of the topic's examples.
+        self._sample_prompts = load_sample_prompts()
+        self._topic_items = {e["topic"]: e["items"] for e in self._sample_prompts}
+        self._example_popup: QFrame | None = None
+
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(10)
-        for text in (
-            "\uc784\uc0c1 \ud504\ub85c\ud1a0\ucf5c \ucd08\uc548 \uc0dd\uc131",
-            "ICH-GCP\u00b7FDA \uaddc\uc81c \uc900\uc218 \uac80\ud1a0",
-            "\ud658\uc790 \uc2dc\ud5d8 \uc801\uaca9\uc131 \ub9e4\uce6d & \uadfc\uac70",
-            "\ud6c4\ubcf4 \uc784\uc0c1\uc2dc\ud5d8 \uac80\uc0c9\u00b7\uc21c\uc704\ud654",
-        ):
-            chip = Chip(text)
-            chip.clicked.connect(lambda _=False, t=text: self._use_chip(t))
-            row.addWidget(chip)
+        if self._sample_prompts:
+            for entry in self._sample_prompts:
+                topic = entry["topic"]
+                chip = Chip(topic)
+                chip.clicked.connect(
+                    lambda _=False, t=topic, c=chip: self._open_examples(t, c))
+                row.addWidget(chip)
+        else:
+            # Fallback to the built-in chips if the JSON is missing/invalid.
+            for text in self.CHIP_PROMPTS:
+                chip = Chip(text)
+                chip.clicked.connect(lambda _=False, t=text: self._use_chip(t))
+                row.addWidget(chip)
         row.addStretch(1)
         layout.addLayout(row)
         layout.addSpacing(30)
@@ -640,6 +675,68 @@ class LauncherPage(QWidget):
         "\ud6c4\ubcf4 \uc784\uc0c1\uc2dc\ud5d8 \uac80\uc0c9\u00b7\uc21c\uc704\ud654":
             "\ud658\uc790 \uc870\uac74\uc5d0 \ub9de\ub294 \ud6c4\ubcf4 \uc784\uc0c1\uc2dc\ud5d8\uc744 \uac80\uc0c9\ud558\uace0 \uae30\uc900 \uc810\uc218\ub97c \uc885\ud569\ud574 \uc21c\uc704\ub97c \uc0b0\uc815\ud574\uc918",
     }
+
+    def _open_examples(self, topic: str, anchor: QWidget):
+        """Open a picker popup listing the topic's example prompts."""
+        items = self._topic_items.get(topic, [])
+        if not items:
+            return
+        if self._example_popup is not None:
+            self._example_popup.close()
+            self._example_popup.deleteLater()
+            self._example_popup = None
+
+        popup = QFrame(self, Qt.WindowType.Popup)
+        popup.setStyleSheet(
+            f"QFrame {{ background: {CARD_L}; border: 1px solid {CARD_L_BORDER}; border-radius: 12px; }}"
+        )
+        pv = QVBoxLayout(popup)
+        pv.setContentsMargins(14, 12, 14, 14)
+        pv.setSpacing(8)
+        head = QLabel("\u2727  " + topic)
+        head.setStyleSheet(
+            f"color: {CARD_TITLE}; font-size: 12px; font-weight: 800;"
+            " background: transparent; border: none;"
+        )
+        pv.addWidget(head)
+        sub = QLabel("\uc608\uc2dc\ub97c \uc120\ud0dd\ud558\uba74 \uc785\ub825\ucc3d\uc5d0 \ucc44\uc6cc\uc9d1\ub2c8\ub2e4")
+        sub.setStyleSheet(f"color: {CARD_SUB}; font-size: 10px; background: transparent; border: none;")
+        pv.addWidget(sub)
+        pv.addSpacing(2)
+
+        for i, text in enumerate(items, 1):
+            item = _ClickableFrame()
+            item.setObjectName("exItem")
+            item.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            item.setStyleSheet(
+                f"QFrame#exItem {{ background: #ffffff; border: 1px solid {CARD_L_BORDER};"
+                " border-radius: 8px; }"
+                f"QFrame#exItem:hover {{ border: 1px solid {TEAL_DIM}; background: #eefbf8; }}"
+            )
+            il = QVBoxLayout(item)
+            il.setContentsMargins(12, 10, 12, 10)
+            il.setSpacing(0)
+            lbl = QLabel(f"{i}. {text}")
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet(
+                f"color: {CARD_TITLE}; font-size: 11px; background: transparent; border: none;"
+            )
+            il.addWidget(lbl)
+            item.clicked.connect(lambda t=text: self._select_example(t))
+            pv.addWidget(item)
+
+        popup.setFixedWidth(560)
+        popup.adjustSize()
+        self._example_popup = popup
+        below = anchor.mapToGlobal(QPoint(0, anchor.height() + 8))
+        popup.move(below)
+        popup.show()
+
+    def _select_example(self, text: str):
+        self.prompt.setPlainText(text)
+        if self._example_popup is not None:
+            self._example_popup.close()
+        self.prompt.setFocus()
 
     def _use_chip(self, text: str):
         self.prompt.setPlainText(self.CHIP_PROMPTS.get(text, text))
