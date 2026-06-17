@@ -53,6 +53,9 @@ You only need a terminal. Everything below runs from the command line.
 ### Windows (PowerShell)
 
 ```powershell
+# 0. Move to the Desktop (so the project is cloned there)
+cd ([Environment]::GetFolderPath("Desktop"))
+
 # 1. Clone (or download the repo ZIP and unzip)
 git clone https://github.com/YelimChoi-DATAIZE/trialAgent.git
 cd trialAgent
